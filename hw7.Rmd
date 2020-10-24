@@ -152,7 +152,7 @@ mymcmc <- function(niter, thetaInit, data, nburn= 100) {
 
 niter <- 3000
 nburn <- 500
-thetaInit <- c(0.5, 5, 5, 2, 5)
+thetaInit <- c(0.5, 5, 1, 5, 1)
 sim <- mymcmc(niter, thetaInit, x)
 plot(ts(sim[,1]), ylab = 'delta')
 hist(ts(sim[,1]), main = '',xlab = 'delta')
