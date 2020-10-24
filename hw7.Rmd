@@ -1,0 +1,107 @@
+---
+title: "STAT-5361 Homework#7"
+author: "Simiao Gao"
+output: pdf_document
+---
+
+## Exercises 5.3.1
+
+### (1)
+
+$$\begin{aligned}
+C \int_0^{\infty} (2x^{\theta-1}+x^{\theta-1/2})e^{-x}dx &= C\int_0^{\infty} 2x^{\theta-1}e^{-x}dx + C\int_0^{\infty} x^{\theta-1/2} e^{-x}dx \\
+&= 2C \cdot \Gamma(\theta) + C \cdot \Gamma(\theta+0.5) \\
+&= 1 \\
+\implies C=\frac{1}{2\Gamma(\theta) + \Gamma(\theta+0.5)}
+\end{aligned}$$
+
+$$g(x) = 2C \cdot \Gamma(\theta) \cdot Gamma(\theta,1) + C\cdot \Gamma(\theta+0.5) \cdot Gamma(\theta+0.5,1)$$
+Therefore, Component distributions are $Gamma(\theta,1)$ and $\Gamma(\theta+0.5)$, and the coresponding weights are $w_1=\frac{2 \Gamma(\theta)}{2\Gamma(\theta) + \Gamma(\theta+0.5)}$ and $1-w_1$.
+
+### (2)
+
+Take $\theta=3$.
+
+```{r message=FALSE, warning=FALSE, tidy=TRUE, tidy.opts=list(width.cutoff=50)}
+theta <- 3
+theta1 <- theta
+theta2 <- theta + 0.5
+c <- 1 / (2 * gamma(theta1) + gamma(theta2)) 
+w1 <- c * 2 * gamma(theta1)
+w2 <- 1 - w1
+
+n <- 10000
+set.seed(2020)
+u <- rbinom(n, prob = w1, size = 1)
+x <- rgamma(n, shape = ifelse(u == 1, theta1, theta2))
+g_true <- function(x) {
+  return(c * exp(-x) * (2 * x^(theta - 1) + x^(theta - 0.5)))
+}
+g_sample <- w1 * dgamma(x, shape = theta1) + w2 * dgamma(x, shape = theta2)
+plot(x, g_sample, ylab = "density", col = "red", cex = .1)
+curve(g_true, from = 0, to = 15, col = "blue", ylab = "", add = TRUE)
+legend("topright",
+       legend=c("sample","true density"),
+       lty=c(1,1),
+       col=c("red","blue"))
+```
+
+### (3)
+
+$\alpha = sup \frac{f(x)}{g(x)}=sup \frac{\sqrt{4+x} \,x^{\theta-1} e^{-x}}{(2x^{\theta-1}+x^{\theta-1/2})e^{-x}}=sup \frac{\sqrt{4+x}}{2+\sqrt{x}}=1$
+
+```{r message=FALSE, warning=FALSE}
+library(ggplot2)
+set.seed(2020)
+f <- function(x) {
+  return(sqrt(4+x) * x^(theta-1) * exp(-x))
+}
+
+ratio <- function(x) {
+  return(sqrt(4+x) / (2 + sqrt(x)))
+}
+
+out <- vector()
+for (i in 1:n) {
+  while (TRUE) {
+    u <- rbinom(1, prob = w1, size = 1)
+    x <- rgamma(1, shape = ifelse(u == 1, theta1, theta2))
+    uni <- runif(1)
+    if (uni < ratio(x)) break
+  }
+  out[i] <- x
+}
+
+d <- unlist(lapply(out, f))
+dat <- data.frame(out, d)
+
+cols <- c("sample"="blue","kernel density"="#red")
+ggplot(data = dat, aes(x = out)) + 
+  geom_density(aes(y=..density.. *5.5), colour = 'red') + 
+  geom_line(aes(y = d), colour = 'blue') + 
+  xlab("x") + 
+  ylab("") 
+  
+```
+
+Red curve is the scaled kernel density, and blue curve is estimated density from sampling. 
+
+## Exercises 6.3.1
+
+$f(x|\mu_1,\mu_2, \sigma_1^2, \sigma_2^2, \delta ) = \delta \cdot \phi(\mu_1, \sigma_1^2) + (1-\delta) \phi(\mu_2, \sigma_2^2)$
+
+Since the prior distribution for $\delta, \mu_1, \mu_2, \sigma_1^2, \sigma_2^2$ are independent, the posterior distribution 
+$f(\boldsymbol{\theta} |x) \propto f(x|\mu_1,\mu_2, \sigma_1^2, \sigma_2^2, \delta ) \, \pi(\delta) \, \pi(\mu_1) \, \pi(\mu_2) \, \pi(\sigma_1^2) \, \pi(\sigma_2^2)$.
+
+```{r message=FALSE, warning=FALSE, tidy=TRUE, tidy.opts=list(width.cutoff=50)}
+set.seed(2020)
+delta <- 0.7 # true value to be estimated based on the data
+n <- 100
+set.seed(123)
+u <- rbinom(n, prob = delta, size = 1)
+x <- rnorm(n, ifelse(u == 1, 7, 10), 0.5)
+
+```
+
+
+
